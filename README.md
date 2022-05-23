@@ -29,7 +29,7 @@ In the wtaa.json file, the gateway can list all necessary information such as as
 
 The gateway usually provides deposit and withdrawal services, so two APIs should be provided in the file: deposit and wtaa. In addition to being used for withdrawals, WTAA can also provide address mapping functions and the ability to interact with other blockchains or smart contracts.
 
-## Deposit:
+## Deposit API:
 
 The client should send a GET request with below parameters. 
 
@@ -90,3 +90,132 @@ The server returns an error object when an error occurs.
 }
 `````````````````
 
+## WTAA API
+
+The WTAA protocol could resolve email-like addresses such as name@yourdomain.com. It allows the client create a dynamic interface for user to transfer their assets.
+
+The client will send `wtaa` and `quote` requests to the API server.
+
+### Step 1: wtaa request
+
+The client sends a GET request with below parameters. For example, when user input *"Ripple@xagfans.com"*.
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| type | string | Must be "wtaa". |
+| domain | string | The string after "@". |
+| destination | string | The string before "@". |
+| address | string | *Optional* The address of the user. |
+| client | string | *Optional* The client and version information. |
+| lang | string | *Optional* Language of the client. |
+
+`````````````````
+https://xagfans.com/withdraw?address=YOUR_XAG_ADDRESS&client=xagtrade-1.4.0&destination=Ripple&domain=xagfans.com&lang=en&network=xag&type=wtaa
+`````````````````
+
+The response could be a xag wallet (address mapping) or some extra fields (dynamic interface). If it is a address, the server returns an object with the following structure:
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| result | string | Must be "success". |
+| data | object | Object contains "destination_address" |
+| *data*.type | string | Must be "wtaa_record". |
+| *data*.destination_address | string | A xag address. |
+| request | object | *Optional* The request parameters. |
+
+``````````
+{
+  "result": "success",
+  "data": {
+    "type": "wtaa_record",
+    "destination_address": "rMeL8gHJifANAfVchSDkTUmUWjHMvCeXrp"
+  },
+  "request": {
+    "address": "r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV",
+    "client": "xagtrade-1.4.0",
+    "destination": "Ripple",
+    "domain": "xagfans.com",
+    "lang": "en",
+    "network": "xag",
+    "type": "wtaa"
+  }
+}
+``````````
+
+The client would consider the email-like address as a alias of the destination_address account. Step 2 is not necessary in this case.
+
+The server could also returns the extra_fields with the following structure:
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| result | string | Must be "success". |
+| data | object | Object contains extra fields. |
+| *data*.type | string | Must be "federation_record". |
+| *data*.destination | string | The value which will be sent in quote step. |
+| *data*.domain | string | The value which will be sent in quote step. |
+| *data*.quote_url | string | The quote url. |
+| *data*.currencies | array | The assets accepted by the destination. Each asset have currency and issuer field. |
+| *data*.extra_fields | array | An array contains the components (text, select, label) which could be used to create a dynamic form. |
+| request | object | *Optional* The request parameters. |
+
+``````````
+{
+  "result": "success",
+  "data": {
+    "type": "wtaa_record",
+    "destination": "Ripple",
+    "domain": "xagfans.com",
+    "quote_url": "https://xagfans.com/withdraw",
+    "currencies": [
+      {
+        "currency": "Ripple",
+        "issuer": "rMeL8gHJifANAfVchSDkTUmUWjHMvCeXrp"
+      }
+    ],
+    "extra_fields": [
+      {
+        "type": "label",
+        "label": "Withdrawal XRP through Ripple network",
+        "hint": "Fees 2 XRP"
+      },
+      {
+        "type": "text",
+        "name": "rippleAddress",
+        "label": "Ripple Address",
+        "required": true
+      },
+      {
+        "type": "text",
+        "name": "tag",
+        "label": "Tag",
+        "hint": "Please confirm if a Tag is required by the recipient.",
+        "required": false
+      }
+    ]
+  },
+  "request": {
+    "address": "r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV",
+    "client": "xagtrade-1.4.0",
+    "destination": "Ripple",
+    "domain": "xagfans.com",
+    "lang": "en",
+    "network": "xag",
+    "type": "wtaa"
+  }
+}
+``````````
+
+Server could return an error object with below structure:
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| error | string | Error code |
+| error_message | string | Error description |
+| request | object | *Optional* The request parameters. |
+
+```````````````
+{
+  "error": "noSuchUser",
+  "error_message": "The supplied user was not found."
+}
+```````````````
