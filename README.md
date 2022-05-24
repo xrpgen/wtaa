@@ -105,6 +105,7 @@ The client sends a GET request with below parameters. For example, when user inp
 | type | string | Must be "wtaa". |
 | domain | string | The string after "@". |
 | destination | string | The string before "@". |
+| network | string | Must be "xrpgen" or "xag". |
 | address | string | *Optional* The address of the user. |
 | client | string | *Optional* The client and version information. |
 | lang | string | *Optional* Language of the client. |
@@ -217,5 +218,108 @@ Server could return an error object with below structure:
 {
   "error": "noSuchUser",
   "error_message": "The supplied user was not found."
+}
+```````````````
+
+### Step 2: quote request
+
+After user fill the form generated with the extra_fields in step 1, a quote GET request should be fired to `quote_url`. 
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| type | string | Must be "quote". |
+| domain | string | The string domain got in step 1. |
+| destination | string | The string destination got in step 1. |
+| amount | string | The amount user would send. Using "/" to seperate the currency, like "100/USDT".  |
+| address | string | The address of the user. |
+| network | string | Must be "xrpgen" or "xag". |
+| *extras* | string | The dynamic fields user provided. |
+| client | string | *Optional* The client and version information. |
+| lang | string | *Optional* Language of the client. |
+
+```````````````
+https://xagfans.com/withdraw?address=r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV&amount=100%2FUSDT&client=xagtrade-1.4.0&destination=USDT&domain=xagfans.com&lang=cn&network=xag&tronAddress=TDTFpXBcmScEdTvvUB8z5kG5q3nTqgLU39&type=quote
+```````````````
+
+The server will calculate the amount user need to send when get the quote requests. The return value has the following structure:
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| result | string | Must be "success". |
+| timestamp | timestamp | When the quote would be expired. |
+| quote | object | Object contains quote information. |
+| *quote*.type | string | Must be "quote". |
+| *quote*.destination | string | Destination value. |
+| *quote*.domain | string | Domain |
+| *quote*.address | string | *Same as destination_address* |
+| *quote*.source | string | The source account used in payment. |
+| *quote*.destination_address | string | The destination xag wallet used in payment. |
+| *quote*.destination_tag | UInt | *Optional* The tag that can be used to identify a particular payment. |
+| *quote*.invoice_id | string | *Optional* A 256-bit hash that can be used to identify a particular payment. |
+| *quote*.memos | array | *Optional* Array of memos to attach to the transaction. |
+| *quote*.send | array | Array of amounts. The calculated amounts need to send. |
+| request | object | *Optional* The request parameters. |
+
+```````````````
+{
+  "result": "success",
+  "quote": {
+    "type": "quote",
+    "destination": "USDT",
+    "domain": "xagfans.com",
+    "amount": "100/USDT",
+    "source": "r4gZMECmikvdPqMYC7fnzjbEwitUknAuvq",
+    "destination_address": "r3ccPsMqBetGFSQGdHTPTjrcBZREppE4Nq",
+    "address": "r3ccPsMqBetGFSQGdHTPTjrcBZREppE4Nq",
+    "destination_tag": 87654321,
+    "invoice_id": "00000000000000000000000000000000000000000000000359720A1587270684",
+    "memos": [
+      {
+        "data": "tron",
+        "type": "network",
+        "format": "text"
+      },
+      {
+        "data": "TDTFpXBcmScEdTvvUB8z5kG5q3nTqgLU39",
+        "type": "address",
+        "format": "text"
+      }
+    ],
+    "send": [
+      {
+        "value": "102",
+        "issuer": "rnzcChVKabxh3JLvh7qGanzqTCDW6fUSDT",
+        "currency": "USDT"
+      }
+    ],
+    "expires": 1653404761
+  },
+  "request": {
+    "address": "r4gZMECmikvdPqMYC7fnzjbEwitUknAuvq",
+    "amount": "100/USDT",
+    "client": "xagtrade-1.4.0",
+    "destination": "USDT",
+    "domain": "xagfans.com",
+    "lang": "cn",
+    "network": "xag",
+    "tronAddress": "TDTFpXBcmScEdTvvUB8z5kG5q3nTqgLU39",
+    "type": "quote"
+  },
+  "timestamp": 1653397561
+}
+```````````````
+
+Server could return an error object with below structure:
+
+| Name | Type | Description |
+|:-------------------------|:-------------------------:|:-------------------------|
+| error | string | Error code |
+| error_message | string | Error description |
+| request | object | *Optional* The request parameters. |
+
+```````````````
+{
+  "error": "InvalidAmount",
+  "error_message": "Send at least 1 USDT."
 }
 ```````````````
